@@ -1,6 +1,6 @@
 import pytest
 
-from src import *
+from lost_and_found_app.src import *
 
 
 def test_create_valid_item():

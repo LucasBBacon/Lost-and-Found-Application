@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -52,5 +53,36 @@ class Item:
         self.status = status
         self.contact_info = contact_info
         
+        self._validate()
+       
+    def _validate(self) -> None:
+        """
+        Validates any fields in the Item.
+
+        Checks:
+         - Required fields are not empty.
+         - Date string matches the required YYYY-MM-DD format.
+
+        Raises:
+            ValueError: If any validation check fails.
+        """
+        if not self.name or not self.name.strip():
+            raise ValueError("Item name field is required.")
+        if not self.location or not self.location.strip():
+            raise ValueError("Item location field is required.")
+        if not self.contact_info or not self.contact_info.strip():
+            raise ValueError("Contact info field is required.")
+        
+        try:
+            datetime.strptime(self.date_lost, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(f"Invalid date format: {self.date_lost}. Expected format: YYYY-MM-DD.")
+        
     def update_status(self, new_status: ItemStatus) -> None:
-        pass
+        """
+        Update the status of the current item.
+
+        Args:
+            new_status (ItemStatus): The new status to set.
+        """
+        self.status = new_status

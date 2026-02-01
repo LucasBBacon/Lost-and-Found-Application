@@ -1,5 +1,5 @@
 from typing import List
-from src.models import Item, ItemStatus
+from lost_and_found_app.src.models import Item, ItemStatus
 
 
 class InventoryManager:
