@@ -4,7 +4,7 @@ from src import *
 
 
 @pytest.fixture
-def manager():
+def manager() -> InventoryManager:
     mgr = InventoryManager(db_name=":memory:")
     mgr.initialize_db()
     return mgr
