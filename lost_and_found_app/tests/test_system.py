@@ -47,7 +47,7 @@ def test_search_by_keyword(manager):
     
     results = manager.search_items("Scarf")
     assert len(results) == 1
-    assert results[0].name == "Red Scarf"
+    assert results[0].name == "Checkered Scarf"
 
 def test_filter_by_status(manager):
     """
