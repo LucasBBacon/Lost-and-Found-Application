@@ -1,4 +1,5 @@
 __all__ = ["Item", "ItemStatus", "InventoryManager"]
 
-from lost_and_found_app.src.database import InventoryManager
-from lost_and_found_app.src.models import Item, ItemStatus
+from src.database import InventoryManager
+from src.models import Item, ItemStatus
+from src.ui import LostFoundApp

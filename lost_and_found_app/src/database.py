@@ -1,6 +1,6 @@
 import sqlite3
 from typing import List
-from lost_and_found_app.src.models import Item, ItemStatus
+from src.models import Item, ItemStatus
 
 
 class InventoryManager:
@@ -78,7 +78,7 @@ class InventoryManager:
             item_id (int): The ID of the item to update.
             new_status (ItemStatus): The new status of the item to set.
         """
-        query = "UPDATE item SET status = ? WHERE id = ?"
+        query = "UPDATE items SET status = ? WHERE id = ?"
         with self.conn:
             self.conn.execute(query, (new_status.value, item_id))
     
