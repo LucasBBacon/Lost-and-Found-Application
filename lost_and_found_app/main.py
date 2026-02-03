@@ -8,12 +8,10 @@ def main():
     db_manager = InventoryManager("lost_and_found.db")
     db_manager.initialize_db()
     
-    root = tk.Tk()
-    
-    app = LostFoundApp(root, db_manager)
+    app = LostFoundApp(None, db_manager)
     
     try:
-        root.mainloop()
+        app.mainloop()
     finally:
         db_manager.close()
         
