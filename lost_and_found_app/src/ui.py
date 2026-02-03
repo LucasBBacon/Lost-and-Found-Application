@@ -52,6 +52,8 @@ class LostFoundApp(ctk.CTk):
         view_menu.add_command(label="Toggle Theme (Light/Dark)", command=self.toggle_theme)
         view_menu.add_command(label="Refresh List", command=self.refresh_list)
         menubar.add_cascade(label="View", menu=view_menu)
+        
+        self.config(menu=menubar)
     
     def _create_layout(self) -> None:
         self.grid_columnconfigure(0, weight=1)
@@ -167,7 +169,7 @@ class LostFoundApp(ctk.CTk):
         else:
             self.theme_switch.deselect()
             
-        self._apply_treeview_style
+        self._apply_treeview_style()
     
     def refresh_list(self):
         """
