@@ -1,3 +1,4 @@
+from pathlib import Path
 import sqlite3
 from typing import Generator
 
@@ -8,14 +9,17 @@ from src.models.item import Item
 
 
 @pytest.fixture(name="db")
-def db_fixture() -> Generator[DatabaseManager, None, None]:
+def db_fixture(tmp_path: Path) -> Generator[DatabaseManager, None, None]:
     """
     Fixture providing a in-memory DatabaseManager fresh for each test.
+    Uses Pytest's tmp_path to create an isolated, temporary database file.
 
     Yields:
         Iterator[DatabaseManager]: An initialized database manager hooked to ':memory:'
     """
-    manager = DatabaseManager(db_name=":memory:")
+    temp_db_path = tmp_path / 'test_lost_and_found.db'
+    
+    manager = DatabaseManager(db_name=str(temp_db_path))
     yield manager
     
 
@@ -47,10 +51,10 @@ def test_database_initialization(db: DatabaseManager) -> None:
         assert table_exists is not None, "The 'items' table was not properly created."
 
 
-def test_add_and_get_item(db: DatabaseManager, sample_item: Item) -> None:
+def test_add_and_get_item(db: DatabaseManager, item: Item) -> None:
     """Test inserting an item and retrieving it."""
     # Create
-    item_id = db.add_item(sample_item)
+    item_id = db.add_item(item)
     assert item_id > 0, "add_item should return a valid database ID greater than 0"
     
     # Read
@@ -59,8 +63,8 @@ def test_add_and_get_item(db: DatabaseManager, sample_item: Item) -> None:
     
     fetched_item = items[0]
     assert fetched_item.id == item_id
-    assert fetched_item.name == sample_item.name
-    assert fetched_item.status == sample_item.status
+    assert fetched_item.name == item.name
+    assert fetched_item.status == item.status
     
 
 def test_get_all_items_empty(db: DatabaseManager) -> None:
@@ -70,9 +74,9 @@ def test_get_all_items_empty(db: DatabaseManager) -> None:
     assert len(items) == 0
     
 
-def test_update_item_success(db: DatabaseManager, sample_item: Item) -> None:
+def test_update_item_success(db: DatabaseManager, item: Item) -> None:
     """Test updating an existing item's details."""
-    item_id = db.add_item(sample_item)
+    item_id = db.add_item(item)
 
     item_to_update = db.get_all_items()[0]
     item_to_update.status = "Found"
@@ -86,16 +90,16 @@ def test_update_item_success(db: DatabaseManager, sample_item: Item) -> None:
     assert updated_item.location == "Security Desk"
     
 
-def test_update_item_not_found(db: DatabaseManager, sample_item: Item) -> None:
+def test_update_item_not_found(db: DatabaseManager, item: Item) -> None:
     """Test updating an item that odes not exist in the database."""
-    sample_item.id = 999
-    success = db.update_item(sample_item)
+    item.id = 999
+    success = db.update_item(item)
     assert success is False, "update_item should return False if the ID does not exist."
     
 
-def test_delete_item_success(db: DatabaseManager, sample_item: Item) -> None:
+def test_delete_item_success(db: DatabaseManager, item: Item) -> None:
     """Test deleting an existing item."""
-    item_id = db.add_item(sample_item)
+    item_id = db.add_item(item)
     
     assert len(db.get_all_items()) == 1
     
