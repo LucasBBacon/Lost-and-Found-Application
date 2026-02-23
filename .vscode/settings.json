@@ -1,6 +1,6 @@
 {
     "python.testing.pytestArgs": [
-        "lost_and_found_app"
+        "tests"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
