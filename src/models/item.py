@@ -1,7 +1,8 @@
 """Domain model Item for the Lost and Found Application."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Optional
 
 
 class ValidationError(Exception):
@@ -30,6 +31,7 @@ class Item:
     location: str
     status: str
     contact_info: str
+    id: Optional[int] = field(default=None)
 
     def __post_init__(self) -> None:
         """Automatically called after initialization to validate attributes."""

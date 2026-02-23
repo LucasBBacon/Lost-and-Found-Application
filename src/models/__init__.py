@@ -15,8 +15,13 @@ The public API exposed by this package is:
 
    Item
    ValidationError
+   DatabaseManager
 """
 
 from .item import Item, ValidationError
+from .database import DatabaseManager
 
-__all__ = ["Item", "ValidationError"]
+__all__ = [
+    "Item", "ValidationError",
+    "DatabaseManager"
+]
