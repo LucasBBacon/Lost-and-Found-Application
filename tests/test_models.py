@@ -60,9 +60,10 @@ def test_item_missing_required_fields(valid_item: dict, missing_field: str) -> N
 @pytest.mark.parametrize("invalid_date", [
     "25-10-2023", # Wrong format (DD-MM-YYYY)
     "2023/10/25", # Wrong separator
-    "Not a date", # Arbritary string
+    "Not a date", # Arbitrary string
     "2023-13-10", # Invalid month
     "2023-12-45", # Invalid day
+    "2023-43-41", # Invalid month and day
 ])    
 def test_item_invalid_date_format(valid_item: dict, invalid_date: str) -> None:
     """
