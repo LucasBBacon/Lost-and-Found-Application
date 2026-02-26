@@ -12,6 +12,12 @@
         "editor.formatOnSave": true
     },
     "cSpell.words": [
-        "macbook"
+        "columnspan",
+        "customtkinter",
+        "macbook",
+        "padx",
+        "pady",
+        "tearoff",
+        "textvariable"
     ]
 }
