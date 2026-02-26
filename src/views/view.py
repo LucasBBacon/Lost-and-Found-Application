@@ -1,9 +1,12 @@
 import tkinter as tk
+from typing import List
 import customtkinter as ctk
 
 from src.controllers.app_controller import AppController
 from src.models.database import DatabaseManager
 from src.models.item import Item
+from src.utils.theme import ThemeColors
+from src.views.confirm_delete import ConfirmDeleteWindow
 from src.views.item_card import ItemCard
 from src.views.item_form import ItemFormWindow
 
@@ -81,12 +84,29 @@ class AppView(ctk.CTk):
     def _setup_action_panel(self) -> None:
         action_frame = ctk.CTkFrame(self, fg_color="transparent")
         action_frame.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
-        
-        btn_add = ctk.CTkButton(action_frame, text="[+] Add Item", command=self._open_add_form)
+
+        btn_add = ctk.CTkButton(
+            action_frame, text="[+] Add Item", command=self._open_add_form
+        )
         btn_add.pack(side="left", padx=10)
-        
-        btn_edit = ctk.CTkButton(action_frame, text="[/] Edit Selected", state="disabled")
-        btn_edit.pack(side="left", padx=10)
+
+        self.btn_edit_selected = ctk.CTkButton(
+            action_frame,
+            text="[/] Edit Selected",
+            state="disabled",
+            command=self._prompt_edit_selected,
+        )
+        self.btn_edit_selected.pack(side="left", padx=10)
+
+        self.btn_delete_selected = ctk.CTkButton(
+            action_frame,
+            text="[X] Delete Selected",
+            fg_color=ThemeColors.BUTTON_DANGER,
+            hover_color=ThemeColors.BUTTON_DANGER_HOVER,
+            state="disabled",
+            command=self._prompt_batch_delete,
+        )
+        self.btn_delete_selected.pack(side="left", padx=10)
 
     def _on_filter_change(self, *args) -> None:
         self._refresh_display()
@@ -119,9 +139,12 @@ class AppView(ctk.CTk):
                 item,
                 search_term,
                 edit_callback=self._open_edit_form,
-                delete_callback=self._delete_item
+                delete_callback=self._delete_item,
+                selection_callback=self._on_card_selection_change,
             )
             card.pack(fill="x", padx=5, pady=5)
+
+        self._on_card_selection_change()
 
     def _mock_add_item(self) -> None:
         from datetime import datetime
@@ -136,17 +159,60 @@ class AppView(ctk.CTk):
         )
         self.controller.add_item(dummy)
         self._refresh_display()
-        
+
     def _open_add_form(self) -> None:
         ItemFormWindow(self, self.controller, on_success=self._refresh_display)
-        
+
     def _open_edit_form(self, item: Item) -> None:
-        ItemFormWindow(self, self.controller, on_success=self._refresh_display, item=item)
-        
+        ItemFormWindow(
+            self, self.controller, on_success=self._refresh_display, item=item
+        )
+
+    def _prompt_edit_selected(self) -> None:
+        selected_items = [
+            card.item
+            for card in self.scroll_frame.winfo_children()
+            if isinstance(card, ItemCard) and card.selected
+        ]
+
+        if len(selected_items) == 1:
+            self._open_edit_form(selected_items[0])
+
     def _delete_item(self, item: Item) -> None:
         if item.id is not None:
             self.controller.delete_item(item.id)
             self._refresh_display()
+
+    def _on_card_selection_change(self) -> None:
+        selected_items = [
+            card.item
+            for card in self.scroll_frame.winfo_children()
+            if isinstance(card, ItemCard) and card.selected
+        ]
+        count = len(selected_items)
+
+        self.btn_edit_selected.configure(state="normal" if count == 1 else "disabled")
+        self.btn_delete_selected.configure(state="normal" if count > 0 else "disabled")
+
+    def _prompt_single_delete(self, item: Item) -> None:
+        ConfirmDeleteWindow(self, [item], on_confirm=self._execute_deletions)
+
+    def _prompt_batch_delete(self) -> None:
+        selected_items = [
+            card.item
+            for card in self.scroll_frame.winfo_children()
+            if isinstance(card, ItemCard) and card.selected
+        ]
+        if selected_items:
+            ConfirmDeleteWindow(
+                self, selected_items, on_confirm=self._execute_deletions
+            )
+
+    def _execute_deletions(self, item_to_delete: List[Item]) -> None:
+        for item in item_to_delete:
+            if item.id is not None:
+                self.controller.delete_item(item.id)
+        self._refresh_display()
 
 
 if __name__ == "__main__":

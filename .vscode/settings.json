@@ -18,6 +18,7 @@
         "padx",
         "pady",
         "tearoff",
-        "textvariable"
+        "textvariable",
+        "wraplength"
     ]
 }

@@ -4,6 +4,7 @@ import customtkinter as ctk
 
 from src.controllers.app_controller import AppController
 from src.models.item import Item, ValidationError
+from src.utils.theme import ThemeColors
 
 
 class ItemFormWindow(ctk.CTkToplevel):
@@ -60,16 +61,18 @@ class ItemFormWindow(ctk.CTkToplevel):
         self.entry_contact = ctk.CTkEntry(frame, width=350)
         self.entry_contact.pack(fill="x")
 
-        self.lbl_error = ctk.CTkLabel(frame, text="", text_color="red")
-        self.lbl_error.pack(pady=(10, 0))
+        self.label_error = ctk.CTkLabel(
+            frame, text="", text_color=ThemeColors.TEXT_ERROR
+        )
+        self.label_error.pack(pady=(10, 0))
 
-        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(20, 0))
+        button_frame = ctk.CTkFrame(frame, fg_color=ThemeColors.TRANSPARENT)
+        button_frame.pack(fill="x", pady=(20, 0))
 
         ctk.CTkButton(
-            btn_frame, text="Cancel", command=self.destroy, fg_color="gray"
+            button_frame, text="Cancel", command=self.destroy, fg_color="gray"
         ).pack(side="left", expand=True, padx=5)
-        ctk.CTkButton(btn_frame, text="Save", command=self._save_item).pack(
+        ctk.CTkButton(button_frame, text="Save", command=self._save_item).pack(
             side="right", expand=True, padx=5
         )
 
@@ -104,4 +107,4 @@ class ItemFormWindow(ctk.CTkToplevel):
             self.destroy()
 
         except ValidationError as e:
-            self.lbl_error.configure(text=str(e))
+            self.label_error.configure(text=str(e))
