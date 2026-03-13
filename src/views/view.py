@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from typing import List
 import customtkinter as ctk
 
@@ -24,6 +25,9 @@ class AppView(ctk.CTk):
 
         self.category_var = ctk.StringVar(value="All")
         self.status_var = ctk.StringVar(value="All")
+        self.view_mode_var = ctk.StringVar(value="Cards")
+
+        self._current_items: List[Item] = []
 
         self._setup_menu()
         self._setup_control_panel()
@@ -42,6 +46,17 @@ class AppView(ctk.CTk):
         menubar.add_cascade(label="File", menu=file_menu)
 
         view_menu = tk.Menu(menubar, tearoff=0)
+        view_menu.add_command(
+            label="Cards Layout", command=lambda: self._set_view_mode("Cards")
+        )
+        view_menu.add_command(
+            label="Table Layout", command=lambda: self._set_view_mode("Table")
+        )
+        view_menu.add_separator()
+        view_menu.add_command(
+            label="Toggle Light/Dark Theme", command=self._toggle_theme
+        )
+        view_menu.add_separator()
         view_menu.add_command(label="Clear Filters", command=self._clear_filters)
         menubar.add_cascade(label="View", menu=view_menu)
 
@@ -58,6 +73,14 @@ class AppView(ctk.CTk):
             width=300,
         )
         search_entry.pack(side="left", padx=10, pady=10)
+
+        view_toggle = ctk.CTkSegmentedButton(
+            control_frame,
+            variable=self.view_mode_var,
+            values=["Cards", "Table"],
+            command=self._on_filter_change,
+        )
+        view_toggle.pack(side="left", padx=10, pady=10)
 
         status_menu = ctk.CTkOptionMenu(
             control_frame,
@@ -76,10 +99,55 @@ class AppView(ctk.CTk):
         category_menu.pack(side="right", padx=10, pady=10)
 
     def _setup_main_display(self) -> None:
-        self.scroll_frame = ctk.CTkScrollableFrame(self)
-        self.scroll_frame.pack(
+        self.display_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.display_container.pack(
             side="top", fill="both", expand=True, padx=10, pady=(0, 10)
         )
+
+        self.scroll_frame = ctk.CTkScrollableFrame(self.display_container)
+
+        self._setup_treeview()
+
+    def _setup_treeview(self) -> None:
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure(
+            "Treeview",
+            background="#2b2b2b",
+            foreground="#ffffff",
+            rowheight=30,
+            fieldbackground="#2b2b2b",
+            borderwidth=0,
+        )
+        style.configure(
+            "Treeview.Heading",
+            background="#565b5e",
+            foreground="#ffffff",
+            relief="flat",
+        )
+        style.map("Treeview", background=[("selected", ThemeColors.HIGHLIGHT)])
+
+        columns = ("id", "name", "category", "date", "location", "status", "contact")
+        self.tree = ttk.Treeview(
+            self.display_container, columns=columns, show="headings"
+        )
+
+        self.tree.heading("name", text="Item Name")
+        self.tree.heading("category", text="Category")
+        self.tree.heading("date", text="Date")
+        self.tree.heading("location", text="Location")
+        self.tree.heading("status", text="Status")
+        self.tree.heading("contact", text="Contact")
+
+        self.tree.column("id", width=0, stretch=tk.NO)
+        self.tree.column("name", width=150)
+        self.tree.column("category", width=100)
+        self.tree.column("date", width=100)
+        self.tree.column("location", width=150)
+        self.tree.column("status", width=80)
+        self.tree.column("contact", width=150)
+
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self._on_selection_change())
 
     def _setup_action_panel(self) -> None:
         action_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -117,34 +185,57 @@ class AppView(ctk.CTk):
         self.status_var.set("All")
 
     def _refresh_display(self) -> None:
-        for widget in self.scroll_frame.winfo_children():
-            widget.destroy()
-
         search_term = self.search_var.get()
         category = self.category_var.get() if self.category_var.get() != "All" else None
         status = self.status_var.get() if self.status_var.get() != "All" else None
 
         items = self.controller.search_items(search_term)
-
-        filtered_items = [
+        self._current_items = [
             item
             for item in items
             if (category is None or item.category == category)
             and (status is None or item.status == status)
         ]
 
-        for item in filtered_items:
-            card = ItemCard(
-                self.scroll_frame,
-                item,
-                search_term,
-                edit_callback=self._open_edit_form,
-                delete_callback=self._delete_item,
-                selection_callback=self._on_card_selection_change,
-            )
-            card.pack(fill="x", padx=5, pady=5)
+        if self.view_mode_var.get() == "Cards":
+            self.tree.pack_forget()
+            self.scroll_frame.pack(side="top", fill="both", expand=True)
 
-        self._on_card_selection_change()
+            for widget in self.scroll_frame.winfo_children():
+                widget.destroy()
+            for item in self._current_items:
+                card = ItemCard(
+                    self.scroll_frame,
+                    item,
+                    search_term,
+                    edit_callback=self._open_edit_form,
+                    delete_callback=self._prompt_single_delete,
+                    selection_callback=self._on_selection_change,
+                )
+                card.pack(fill="x", padx=5, pady=5)
+
+        else:
+            self.scroll_frame.pack_forget()
+            self.tree.pack(side="top", fill="both", expand=True)
+
+            for row in self.tree.get_children():
+                self.tree.delete(row)
+            for item in self._current_items:
+                self.tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        item.id,
+                        item.name,
+                        item.category,
+                        item.date,
+                        item.location,
+                        item.status,
+                        item.contact_info,
+                    ),
+                )
+
+        self._on_selection_change()
 
     def _mock_add_item(self) -> None:
         from datetime import datetime
@@ -168,51 +259,57 @@ class AppView(ctk.CTk):
             self, self.controller, on_success=self._refresh_display, item=item
         )
 
-    def _prompt_edit_selected(self) -> None:
-        selected_items = [
-            card.item
-            for card in self.scroll_frame.winfo_children()
-            if isinstance(card, ItemCard) and card.selected
-        ]
-
-        if len(selected_items) == 1:
-            self._open_edit_form(selected_items[0])
-
     def _delete_item(self, item: Item) -> None:
         if item.id is not None:
             self.controller.delete_item(item.id)
             self._refresh_display()
 
-    def _on_card_selection_change(self) -> None:
-        selected_items = [
-            card.item
-            for card in self.scroll_frame.winfo_children()
-            if isinstance(card, ItemCard) and card.selected
-        ]
-        count = len(selected_items)
+    def _get_selected_items(self) -> List[Item]:
+        if self.view_mode_var.get() == "Cards":
+            return [
+                card.item
+                for card in self.scroll_frame.winfo_children()
+                if isinstance(card, ItemCard) and card.selected
+            ]
+        else:
+            selected_rows = self.tree.selection()
+            selected_db_ids = [
+                self.tree.item(row)["values"][0] for row in selected_rows
+            ]
+            return [item for item in self._current_items if item.id in selected_db_ids]
 
+    def _on_selection_change(self) -> None:
+        count = len(self._get_selected_items())
         self.btn_edit_selected.configure(state="normal" if count == 1 else "disabled")
         self.btn_delete_selected.configure(state="normal" if count > 0 else "disabled")
+
+    def _prompt_edit_selected(self) -> None:
+        selected = self._get_selected_items()
+        if len(selected) == 1:
+            self._open_edit_form(selected[0])
 
     def _prompt_single_delete(self, item: Item) -> None:
         ConfirmDeleteWindow(self, [item], on_confirm=self._execute_deletions)
 
     def _prompt_batch_delete(self) -> None:
-        selected_items = [
-            card.item
-            for card in self.scroll_frame.winfo_children()
-            if isinstance(card, ItemCard) and card.selected
-        ]
-        if selected_items:
-            ConfirmDeleteWindow(
-                self, selected_items, on_confirm=self._execute_deletions
-            )
+        selected = self._get_selected_items()
+        if selected:
+            ConfirmDeleteWindow(self, selected, on_confirm=self._execute_deletions)
 
     def _execute_deletions(self, item_to_delete: List[Item]) -> None:
         for item in item_to_delete:
             if item.id is not None:
                 self.controller.delete_item(item.id)
         self._refresh_display()
+
+    def _set_view_mode(self, mode: str) -> None:
+        self.view_mode_var.set(mode)
+        self._refresh_display()
+
+    def _toggle_theme(self) -> None:
+        current_theme = ctk.get_appearance_mode()
+        new_theme = "Light" if current_theme == "Dark" else "Dark"
+        ctk.set_appearance_mode(new_theme)
 
 
 if __name__ == "__main__":
